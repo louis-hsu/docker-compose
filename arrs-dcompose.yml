@@ -1,0 +1,141 @@
+version: "3.8"
+
+networks:
+  the_arrs:
+    name: the_arrs
+    driver: bridge
+    # Set to 'external: true' if you already created this network via 'docker network create'
+    external: true 
+
+services:
+  # --- VPN GATEWAY ---
+  gluetun:
+    image: docker.io/qmcgaw/gluetun:v3
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TZ=Asia/Taipei
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=WGpMsBIelKm5qubBibdnd8v98MAObBt2rpeu8lZ7aVA=
+      - WIREGUARD_ADDRESSES=10.14.0.2/16
+      - SERVER_COUNTRIES=Taiwan
+      - SERVER_REGIONS=Asia Pacific
+      - SERVER_CITIES=Taipei
+      - SERVER_HOSTNAMES=tw-tai.prod.surfshark.com
+      - DOT_IPV6=off
+      - LOG_LEVEL=info
+    networks:
+      - the_arrs
+    ports:
+      # All ports for services sharing Gluetun's network must be mapped here
+      - "15888:15888/tcp" # qBittorrent Web UI
+      - "6881:6881/tcp"   # qBittorrent Torrenting
+      - "6881:6881/udp"
+      - "8388:8388/tcp"   # Shadowsocks (if enabled)
+      - "8388:8388/udp"
+      - "8888:8888/tcp"   # HTTP Proxy (if enabled)
+    volumes:
+      - /config:/home/nshiu/arrDATA/config/Gluetun
+    restart: unless-stopped
+    # healthcheck:
+    #   test: ["CMD-SHELL", "grep -q 'up' /sys/class/net/tun0/operstate || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+  # --- DOWNLOAD CLIENT (Routed through Gluetun) ---
+  qbittorrent:
+    image: docker.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Taipei
+      - WEBUI_PORT=15888
+    volumes:
+      - /home/nshiu/arrDATA/config/qBit:/config
+      - /home/nshiu/arrDATA/media/mordred/data:/data
+    entrypoint: /bin/sh -c "sleep 5 && exec /init"
+    depends_on:
+      - gluetun
+        # condition: service_healthy
+    restart: unless-stopped
+
+  # --- THE ARR SUITE (Bridge Network) ---
+  sonarr:
+    image: docker.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    networks:
+      - the_arrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Taipei
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US.UTF-8
+      # Networking Fixes for Ubuntu/Docker
+      # - DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
+      # - DOTNET_RESTRICT_IPv6_TO_HOST=true
+    ports:
+      - "8989:8989"
+    volumes:
+      - /home/nshiu/arrDATA/config/Sonarr:/config
+      - /home/nshiu/arrDATA/media/mordred/data:/data
+      # - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+
+  radarr:
+    image: docker.io/linuxserver/radarr:latest
+    container_name: radarr
+    networks:
+      - the_arrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Taipei
+      # Networking Fixes
+      # - DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
+      # - DOTNET_RESTRICT_IPv6_TO_HOST=true
+    ports:
+      - "7878:7878"
+    volumes:
+      - /home/nshiu/arrDATA/config/Radarr:/config
+      - /home/nshiu/arrDATA/media/mordred/data:/data
+      # - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+
+  jackett:
+    image: docker.io/linuxserver/jackett:latest
+    container_name: jackett
+    networks:
+      - the_arrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Taipei
+      - AUTO_UPDATE=true
+    ports:
+      - "9117:9117"
+    volumes:
+      - /home/nshiu/arrDATA/config:/config
+      - /home/nshiu/arrDATA/data:/data
+    restart: unless-stopped
+
+  flaresolverr:
+    image: docker.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    networks:
+      - the_arrs
+    environment:
+      - TZ=Asia/Taipei
+      - LOG_LEVEL=info
+    ports:
+      - "8191:8191"
+    volumes:
+      - /home/nshiu/arrDATA/config/Flaresolverr:/config
+    restart: unless-stopped
