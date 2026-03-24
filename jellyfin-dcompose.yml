@@ -11,8 +11,8 @@ services:
       - /dev/dri/renderD128:/dev/dri/renderD128
       - /dev/dri/card1:/dev/dri/card1
     volumes:
-      - ~/arrDATA/config/Jellyfin:/config
-      - ~/arrDATA/media:/media
+      - /home/nshiu/arrDATA/config/Jellyfin:/config
+      - /home/nshiu/arrDATA/media:/media
       - /dev/shm:/transcode
       
     environment:
