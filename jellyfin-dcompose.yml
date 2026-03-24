@@ -3,9 +3,6 @@ services:
   jellyfin:
     image: docker.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    user: 1000:1000
-    group_add:
-      - "109"
     network_mode: "host"
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
@@ -14,8 +11,12 @@ services:
       - /home/nshiu/arrDATA/config/Jellyfin:/config
       - /home/nshiu/arrDATA/media:/media
       - /dev/shm:/transcode
-      
+    ports:
+      - 8096:8096
     environment:
       - TZ=Asia/Taipei
+      - PUID=1000
+      - PGID=1000
+      - JELLYFIN_ADDITIONAL_GID=109
       - JELLYFIN_PublishedServerUrl=http://10.0.1.51
     restart: unless-stopped
