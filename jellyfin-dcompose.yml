@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: 1000:1000
+    group_add:
+      - "109"
+    network_mode: "host"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card1:/dev/dri/card1
+    volumes:
+      - ~/arrDATA/config/Jellyfin:/config
+      - ~/arrDATA/media:/media
+      - /dev/shm:/transcode
+      
+    environment:
+      - TZ=Asia/Taipei
+      - JELLYFIN_PublishedServerUrl=http://10.0.1.51
+    restart: unless-stopped
