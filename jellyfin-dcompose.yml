@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   jellyfin:
-    image: jellyfin/jellyfin:latest
+    image: docker.io/linuxserver/jellyfin:latest
     container_name: jellyfin
     user: 1000:1000
     group_add:
