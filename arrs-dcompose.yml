@@ -109,6 +109,26 @@ services:
       # - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
 
+  bazarr:
+    image: docker.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    networks:
+      - the_arrs
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Taipei
+      # Networking Fixes
+      # - DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
+      # - DOTNET_RESTRICT_IPv6_TO_HOST=true
+    ports:
+      - "6767:6767"
+    volumes:
+      - /home/nshiu/arrDATA/config/Bazarr:/config
+      # - /home/nshiu/arrDATA/media/mordred/data:/data
+      # - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+
   jackett:
     image: docker.io/linuxserver/jackett:latest
     container_name: jackett

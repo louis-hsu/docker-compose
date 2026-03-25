@@ -10,7 +10,9 @@ services:
     volumes:
       - /home/nshiu/arrDATA/config/Jellyfin:/config
       - /home/nshiu/arrDATA/media:/media
-      - /dev/shm:/transcode
+      # - /dev/shm:/transcode
+    tmpfs:
+      - /transcode:size=4G,mode=1777
     ports:
       - 8096:8096
     environment:
